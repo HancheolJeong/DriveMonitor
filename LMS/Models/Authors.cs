@@ -11,6 +11,6 @@ namespace LMS.Models
         public int id {  get; set; } // id
         public string name { get; set; } // 이름
         public string nationality { get; set; } // 국적
-        public DateTime creating_dt { get; set; } // 생성일
+        public DateTime creating_dt { get; set; } // 생성일2
     }
 }
