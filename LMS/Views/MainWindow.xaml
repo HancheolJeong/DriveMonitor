@@ -1,0 +1,34 @@
+﻿<Window x:Class="LMS.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LMS"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="874" Width="1466">
+    <DockPanel LastChildFill="True">
+        <StackPanel Width="262" DockPanel.Dock="Left">
+            <TabControl TabStripPlacement="Left">
+                <TabControl.ItemContainerStyle>
+                    <Style TargetType="TabItem">
+                        <Setter Property="Width" Value="260"/>
+                        <Setter Property="Height" Value="80"/>
+                        <Setter Property="Padding" Value="10"/>
+                        <Setter Property="Margin" Value="0"/>
+                        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                    </Style>
+                </TabControl.ItemContainerStyle>
+                <TabItem Header="메인화면"/>
+                <TabItem Header="사용자관리"/>
+                <TabItem Header="도서관리"/>
+                <TabItem Header="대출관리"/>
+                <TabItem Header="카테고리관리"/>
+                <TabItem Header="작가관리"/>
+                <TabItem Header="출판사관리"/>
+                <TabItem Header="공지관리"/>
+
+            </TabControl>
+        </StackPanel>
+        <ContentControl/>
+    </DockPanel>
+</Window>
