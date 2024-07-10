@@ -24,5 +24,10 @@ namespace LMS.Views
         {
             InitializeComponent();
         }
+
+        private void CommonHeader_Loaded(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

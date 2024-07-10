@@ -4,8 +4,41 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
       xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
       xmlns:local="clr-namespace:LMS.Views"
+      xmlns:vm="clr-namespace:LMS.ViewModels"
       mc:Ignorable="d" 
       d:DesignHeight="450" d:DesignWidth="800"
       Title="BookPage">
 
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- 상단 사용자 정의 컨트롤 -->
+            <RowDefinition Height="*"/>
+            <!-- 중앙 ListView -->
+            <RowDefinition Height="Auto"/>
+            <!-- 하단 사용자 정의 컨트롤 (미구현) -->
+        </Grid.RowDefinitions>
+
+        <!-- 상단에 사용자 정의 컨트롤 추가 -->
+        <vm:CommonHeader Grid.Row="0" Loaded="CommonHeader_Loaded"/>
+
+        <!-- 중앙에 ListView 추가 -->
+        <ListView Grid.Row="1" Margin="10">
+            <!-- ListView 구성, 예: 단순 아이템 템플릿 -->
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding Title}" Margin="5"/>
+                        <TextBlock Text="{Binding Author}" Margin="5"/>
+                        <!-- 기타 필드 추가 -->
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <!-- 하단에 공간만 예약 -->
+        <StackPanel Grid.Row="2" Height="50" Background="LightGray">
+            <!-- 미구현 공간, 추후 다른 컨트롤이나 내용을 추가할 예정 -->
+        </StackPanel>
+    </Grid>
 </Page>
