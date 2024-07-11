@@ -35,6 +35,12 @@ C#, WPF, OpenCV, MSSQL
 <img src="https://github.com/HancheolJeong/DriveMonitor/assets/70940120/50b6c827-d21f-4e08-bf09-362b46d5fc13.png" width="800px"/>
 <p>출처 : AI 허브</p>
 </div>
+<br />
+<br />
+<summary>MVVM패턴</summary>
+<div markdown="1" style="padding-left: 15px;">
+<img src="https://github.com/HancheolJeong/DriveMonitor/assets/70940120/63530f21-ae0a-4942-be9c-2464a16e1d30.png" width="800px"/>
+</div>
 </details>
 
 <br />
