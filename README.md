@@ -41,6 +41,12 @@ C#, WPF, OpenCV, MSSQL
 <div markdown="1" style="padding-left: 15px;">
 <img src="https://github.com/HancheolJeong/DriveMonitor/assets/70940120/63530f21-ae0a-4942-be9c-2464a16e1d30.png" width="800px"/>
 </div>
+<br />
+<br />
+<summary>시스템구조</summary>
+<div markdown="1" style="padding-left: 15px;">
+<img src="https://github.com/HancheolJeong/DriveMonitor/assets/70940120/9a16c91f-224c-40c7-9540-e7cc16b7bde6.png" width="800px"/>
+</div>
 </details>
 
 <br />
