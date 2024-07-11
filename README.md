@@ -30,6 +30,11 @@ C#, WPF, OpenCV, MSSQL
 # 📝설계
 
 <details>
+<summary>데이터셋</summary>
+<div markdown="1" style="padding-left: 15px;">
+<img src="https://github.com/HancheolJeong/DriveMonitor/assets/70940120/50b6c827-d21f-4e08-bf09-362b46d5fc13.png" width="800px"/>
+<p>출처 : AI 허브</p>
+</div>
 </details>
 
 <br />
