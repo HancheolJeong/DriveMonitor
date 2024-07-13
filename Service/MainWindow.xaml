@@ -13,7 +13,6 @@
             <ColumnDefinition Width="2*" />
         </Grid.ColumnDefinitions>
 
-        <!-- 첫 번째 수평 영역 (4*) -->
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="2*" />
@@ -22,14 +21,20 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="4*" />
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Background="Transparent" Text="Top Panel 1" />
+            <TextBlock Grid.Row="0" Text="들어온 차량 정보" FontSize="24" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"/>
             <GridSplitter Grid.Row="1" Height="5" VerticalAlignment="Stretch" Background="Gray" />
-            <TextBlock Grid.Row="2" Background="Transparent" Text="Middle Panel 1" />
+            <Image Grid.Row="2" />
             <GridSplitter Grid.Row="3" Height="5" VerticalAlignment="Stretch" Background="Gray" />
-            <TextBlock Grid.Row="4" Background="Transparent" Text="Bottom Panel 1" />
+            <ListView Grid.Row="4">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="차량번호" DisplayMemberBinding="{Binding VehicleNumber}" />
+                        <GridViewColumn Header="시간" DisplayMemberBinding="{Binding Time}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
         </Grid>
 
-        <!-- 두 번째 수평 영역 (4*) -->
         <Grid Grid.Column="1">
             <Grid.RowDefinitions>
                 <RowDefinition Height="2*" />
@@ -38,14 +43,21 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="4*" />
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Background="Transparent" Text="Top Panel 2" />
+            <TextBlock Grid.Row="0" Text="나간 차량 정보" FontSize="24" VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"/>
             <GridSplitter Grid.Row="1" Height="5" VerticalAlignment="Stretch" Background="Gray" />
-            <TextBlock Grid.Row="2" Background="Transparent" Text="Middle Panel 2" />
+            <Image Grid.Row="2" />
             <GridSplitter Grid.Row="3" Height="5" VerticalAlignment="Stretch" Background="Gray" />
-            <TextBlock Grid.Row="4" Background="Transparent" Text="Bottom Panel 2" />
+            <ListView Grid.Row="4">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn Header="차량번호" DisplayMemberBinding="{Binding VehicleNumber}" />
+                        <GridViewColumn Header="요금" DisplayMemberBinding="{Binding Fee}" />
+                        <GridViewColumn Header="시간" DisplayMemberBinding="{Binding Time}" />
+                    </GridView>
+                </ListView.View>
+            </ListView>
         </Grid>
 
-        <!-- 세 번째 수평 영역 (2*) -->
         <TextBlock Grid.Column="2" Background="Transparent" Text="Right Panel" />
     </Grid>
 </Window>
