@@ -29,7 +29,6 @@ C#, WPF, OpenCV, MSSQL
 
 # 📝설계
 
-<details>
 <summary>데이터셋</summary>
 <div markdown="1" style="padding-left: 15px;">
 <img src="https://github.com/HancheolJeong/DriveMonitor/assets/70940120/50b6c827-d21f-4e08-bf09-362b46d5fc13.png" width="800px"/>
@@ -47,7 +46,12 @@ C#, WPF, OpenCV, MSSQL
 <div markdown="1" style="padding-left: 15px;">
 <img src="https://github.com/HancheolJeong/DriveMonitor/assets/70940120/9a16c91f-224c-40c7-9540-e7cc16b7bde6.png" width="800px"/>
 </div>
-</details>
+<br />
+<br />
+<summary>주차관리프로세스</summary>
+<div markdown="1" style="padding-left: 15px;">
+<img src="https://github.com/HancheolJeong/user-attachments/assets/13fafabe-46cf-4b1f-8655-d103bc041a78.png" width="800px"/>
+</div>
 
 <br />
 <br />

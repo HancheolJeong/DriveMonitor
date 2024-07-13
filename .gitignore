@@ -361,4 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
-/LMS/Properties/Settings.settings
+/LMS/Properties/*
+
+/Service/Properties/*
+/Service/Resources/*
+
+/Camera/Properties/*
+/Camera/Resources/*
