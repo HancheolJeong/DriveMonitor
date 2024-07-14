@@ -75,11 +75,13 @@ namespace TcpClientApp
             Console.WriteLine($"요금은 {fee}원 입니다.");
 
             // 요금 재전송 정상적으로 요금을 수납했다고 알리는 작업
-            byte[] feeBytes = BitConverter.GetBytes(fee);
-            await stream.WriteAsync(feeBytes, 0, feeBytes.Length);
+            string tmpFeeVerify = Console.ReadLine(); // 고객이 수납한 요금
+            int feeVerify = int.TryParse(tmpFeeVerify, out int res ) ? res : -1; // int로 형변환
+            byte[] feeBytes = BitConverter.GetBytes(feeVerify); // 서버소켓으로 전송
+            await stream.WriteAsync(feeBytes, 0, feeBytes.Length); // 응답읽기
 
             // 차량 번호 수신
-            buffer = new byte[4]; // Assuming vehicle number is 4 bytes long
+            buffer = new byte[4]; // 4바이트크기
             bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
             string vehicleNumber = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 

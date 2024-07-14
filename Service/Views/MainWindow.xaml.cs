@@ -1,19 +1,21 @@
 ﻿using Service.Vehicle; // Vehicle 네임스페이스 선언
+using Service.ViewModels;
 using System.Collections.ObjectModel; // 데이터 컬렉션 관련 클래스
 using System.IO; // 입출력 관련 네임스페이스
 using System.Net; // 네트워크 관련 네임스페이스
 using System.Net.Sockets; // TCP/IP 소켓 관련 네임스페이스
 using System.Text; // 문자열 처리 네임스페이스
 using System.Windows; //WPF 응용 프로그램 네임스페이스
-using System.Windows.Media.Imaging; 
+using System.Windows.Media.Imaging;
 
-namespace Service
+namespace Service.Views
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
+        public MainViewModel _mainViewModel { get; set; }
         private TcpListener _listener; // TCP 소켓 선언 
         private const int Port = 11000; // 포트번호
         public ObservableCollection<VehicleInfo> IncomingVehicles { get; set; } = new ObservableCollection<VehicleInfo>(); // 들어온 차량 정보 객체 선언
@@ -24,6 +26,7 @@ namespace Service
             InitializeComponent(); // XAML 정의 요소 초기화
             DataContext = this; // 데이터 바인딩을 위한 데이터 컨텍스트 설정
             StartTcpServer(); // TCP 서버 시작
+            _mainViewModel = new MainViewModel();
         }
 
         private async void StartTcpServer()
@@ -60,19 +63,23 @@ namespace Service
         private async Task HandleIncomingVehicle(NetworkStream stream)
         {
             string imageResource = await ReceiveFile(stream); // 파일 수신
-
             Application.Current.Dispatcher.Invoke(() =>
             {
+                string number = _mainViewModel.LoadAndProcessImage(imageResource);
                 try
                 {
                     var image = new BitmapImage(new Uri(imageResource, UriKind.Absolute)); // 비트맵 이미지 생성
-                    IncomingVehicleImage.Source = image; // WPF 이미지 컨트롤 소스 이미지 지정
-
-                    IncomingVehicles.Add(new VehicleInfo // 리스트뷰 요소 추가
+                    Application.Current.Dispatcher.Invoke(() => // UI 스레드가 아닌 다른 스레드에서 UI요소에 접근할 때 동기실행 되도록 하는구문
                     {
-                        VehicleNumber = "0000", // 차량 번호
-                        Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") // 들어온 시간
+                        IncomingVehicleImage.Source = image; // WPF 이미지 컨트롤 소스 이미지 지정
+
+                        IncomingVehicles.Add(new VehicleInfo // 리스트뷰 요소 추가
+                        {
+                            VehicleNumber = number, // 차량 번호
+                            Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") // 들어온 시간
+                        });
                     });
+
                 }
                 catch (Exception ex)
                 {
@@ -87,19 +94,22 @@ namespace Service
         private async Task HandleOutgoingVehicle(NetworkStream stream)
         {
             string imageResource = await ReceiveFile(stream); // 파일 수신
-
             Application.Current.Dispatcher.Invoke(() =>
             {
                 try
                 {
                     var image = new BitmapImage(new Uri(imageResource, UriKind.Absolute)); // 비트맵 이미지 생성
-                    OutgoingVehicleImage.Source = image; // WPF 이미지 컨트롤 소스 이미지 지정
 
-                    OutgoingVehicles.Add(new VehicleInfo // 리스트뷰 요소 추가
+                    Application.Current.Dispatcher.Invoke(() => // UI 스레드가 아닌 다른 스레드에서 UI요소에 접근할 때 동기실행 되도록 하는구문
                     {
-                        VehicleNumber = "0001", // 차량 번호
-                        Fee = 1000, // 요금
-                        Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") // 나간 시간
+                        OutgoingVehicleImage.Source = image; // WPF 이미지 컨트롤 소스 이미지 지정
+
+                        OutgoingVehicles.Add(new VehicleInfo // 리스트뷰 요소 추가
+                        {
+                            VehicleNumber = "0001", // 차량 번호
+                            Fee = 1000, // 요금
+                            Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") // 나간 시간
+                        });
                     });
                 }
                 catch (Exception ex)
@@ -109,6 +119,8 @@ namespace Service
             });
 
             int fee = 1000;
+            // 데이터베이스로부터 들어온 시간과 나간시간의 차를 구하고 이를 주차요금으로 환산한다.
+
             byte[] feeBytes = BitConverter.GetBytes(fee); // 요금값을 바이트로 변환해 배열에 넣는다
             await stream.WriteAsync(feeBytes, 0, feeBytes.Length); // 요금정보를 전송
 
@@ -117,6 +129,8 @@ namespace Service
             string clientFee = Encoding.UTF8.GetString(buffer, 0, bytesRead); // 읽은 데이터를 문자열로 변환
 
             // 데이터베이스에 데이터를 저장하는 작업이 필요하다.
+            Console.WriteLine(clientFee);
+            Console.WriteLine(fee.ToString());
             if (clientFee == fee.ToString())
             {
                 byte[] vehicleNumberBytes = Encoding.UTF8.GetBytes("0001"); // 차량 번호
