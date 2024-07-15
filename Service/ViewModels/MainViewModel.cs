@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using OpenCvSharp;
+﻿using OpenCvSharp;
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Reflection;
 using Tesseract;
-using System.Runtime.InteropServices;
-using System.IO;
+using Point = OpenCvSharp.Point;
+using Size = OpenCvSharp.Size;
 using Rect = OpenCvSharp.Rect;
-using OpenCvSharp.Internal.Vectors;
-
+using System.IO;
+using System.Windows.Media;
+using System.Windows;
 /*
  * 차량 번호판 인식 프로세스
  * 1. 영상은 GrayScale 영상으로 변환
@@ -35,65 +31,106 @@ namespace Service.ViewModels
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
-        public event PropertyChangedEventHandler? PropertyChanged; // 
-
-        /// <summary>
-        /// 속성의 값이 변경될 떄 호출되는 메서드
-        /// </summary>
-        /// <param name="propertyName"></param>
-
+        public event PropertyChangedEventHandler? PropertyChanged;
 
         public String LoadAndProcessImage(string imagePath)
         {
 
             string test = "test";
 
+
             // 1단계 영상은 GrayScale 영상으로 변환
             Mat imgS1 = Cv2.ImRead(imagePath, ImreadModes.Grayscale); // 이미지를 1채널로 불러온다.
-            Cv2.ImShow("1단계 Grayscale", imgS1);
+            //Cv2.Resize(imgS1, imgS1, new Size(300, 100)); // 각 데이터세트마다 이미지 크기가 달라서 해당 작업이 필요하다
+            //Cv2.ImShow("1단계 Grayscale", imgS1);
+            int width = imgS1.Width;
+            int height = imgS1.Height;
 
             // 2단계 Gaussian Blurring 노이즈 제거
             Mat imgS2 = new Mat();
             Cv2.GaussianBlur(imgS1, imgS2, new Size(5, 5), 0);
-            Cv2.ImShow("2단계 Gaussian Blurring", imgS2);
+            //Cv2.ImShow("2단계 Gaussian Blurring", imgS2);
 
             // 3단계 전처리된 영상에 Edge 검출
             Mat imgS3 = new Mat();
-            Cv2.Canny(imgS2, imgS3, 100, 200);
+            Cv2.Canny(imgS2, imgS3, 100, 200, 3);
             Cv2.ImShow("3단계 Edge", imgS3);
 
-            // 4단계 Contour 그리고 이 중 번호판글자로 추정되는 객체 분류
+
+            // 4단계 Contour 검출 - 외곽선 좌표를 모두 추출
             Mat imgS4 = new Mat();
             Point[][] contours;
-            HierarchyIndex[] hierarchy;
+            HierarchyIndex[] hierarchy; // 외곽선 계층 정보
             Cv2.FindContours(imgS3, out contours, out hierarchy, RetrievalModes.Tree, ContourApproximationModes.ApproxSimple);
+            List<Point[]> contours_poly = new List<Point[]>(contours.Length);
+            imgS4 = Mat.Zeros(imgS3.Size(), MatType.CV_8UC3);
+            List<Rect> boundRect = new List<Rect>(contours.Length);
+            List<Rect> boundRect2 = new List<Rect>();
 
-            foreach (var contour in contours)
+            for (int i = 0; i < contours.Length; i++)
             {
-                var rect = Cv2.BoundingRect(contour);
-                double area = rect.Width * rect.Height;
+                contours_poly.Add(Cv2.ApproxPolyDP(contours[i], 1, true));
+                boundRect.Add(Cv2.BoundingRect(contours_poly[i])); // Contour 정보 추가
+            }
 
-                if ((double)rect.Height / rect.Width <= 2.5 && (double)rect.Height / rect.Width >= 0.5 && area <= 700 && area >= 100)
+            int refinery_count = 0;
+
+            for (int i = 0; i < contours.Length; i++)
+            {
+                double ratio = (double)boundRect[i].Height / boundRect[i].Width;
+
+                    //if ((boundRect[i].Width * boundRect[i].Height <= 2000) && (boundRect[i].Width * boundRect[i].Height >= 200))
+                if ((ratio <= 3.0) && (ratio >= 0.8) && (boundRect[i].Width * boundRect[i].Height <= 1500) && (boundRect[i].Width * boundRect[i].Height >= 200))
                 {
-                    Cv2.Rectangle(imgS1, rect, Scalar.Green, 1);
+                    Cv2.DrawContours(imgS4, contours, i, new Scalar(0, 255, 255), 1, LineTypes.Link8, hierarchy, 0); // DrawContour는 외곽선 그리는 함수
+                    Cv2.Rectangle(imgS4, boundRect[i].TopLeft, boundRect[i].BottomRight, new Scalar(255, 0, 0), 1, LineTypes.Link8); //외곽선을 채우는 사각형을 그리는 함수
+                    /*
+                     저장되는 정보 X, Y, Width, Height, Top, Bottom, Left, Right, Location(point), Size(size), TopLeft(x,y), BottomRight(x,y)a
+                     */
+                    boundRect2.Add(boundRect[i]); // 사각형 좌표정보를 저장합니다.
+                    refinery_count += 1;
                 }
             }
-            Cv2.ImShow("Detected Plates", imgS1);
+            Cv2.ImShow("4단계 Contour", imgS4);
+
+            //Cv2.ImWrite("temp.jpg", imgS7);
+            //Cv2.ImShow("result", imgS7);
+
             Cv2.WaitKey(0);
             Cv2.DestroyAllWindows();
 
+
+            //test = GetLicensePlateNumber("temp.jpg");
             return test;
 
 
         }
 
+        public string GetLicensePlateNumber(string imagePath)
+        {
+            var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase);
+            string licensePlateNumber = "";
+            path = Path.Combine(path, "tessdata");
+            path = path.Replace("file:\\", "");
+            using (var engine = new TesseractEngine(path, "kor", EngineMode.TesseractOnly))
+            using (var img = Pix.LoadFromFile(imagePath))
+            {
+                using (var page = engine.Process(img, PageSegMode.SingleLine))
+                {
+                    string tempLicensePlateNumber = page.GetText();
+                    licensePlateNumber = ExtractLicensePlateNumber(tempLicensePlateNumber);
 
+                }
+            }
+            return licensePlateNumber;
+        }
 
-
-
-
-
-
-
+        private string ExtractLicensePlateNumber(string text)
+        {
+            text = text.Replace(" ", "").Replace("\n", "").Replace("\r", "").Replace("\t", "");
+            var regex = new System.Text.RegularExpressions.Regex("\\d{2,3}[가-힣]\\d{4}");
+            var match = regex.Match(text);
+            return match.Success ? match.Value : "OCR 인식 오류 : " + text;
+        }
     }
 }

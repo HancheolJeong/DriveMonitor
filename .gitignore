@@ -368,3 +368,5 @@ FodyWeavers.xsd
 
 /Camera/Properties/*
 /Camera/Resources/*
+
+/Test/Resources/*
