@@ -50,9 +50,14 @@ C#, WPF, OpenCV, MSSQL
 <br />
 <summary>주차관리프로세스</summary>
 <div markdown="1" style="padding-left: 15px;">
-<img src="https://github.com/user-attachments/assets/90cab259-39d9-4ba5-b5d5-6feee78b1308.png" />
+<img src="https://github.com/user-attachments/assets/b6754257-296f-48a0-b18a-60a10459d568.png" width="800px"/>
 </div>
-
+<br />
+<br />
+<summary>영상처리과정</summary>
+<div markdown="1" style="padding-left: 15px;">
+<img src="https://github.com/user-attachments/assets/3467ffd3-687e-4f57-b174-fed85e2b3c31.png" width="800px"/>
+</div>
 <br />
 <br />
 
