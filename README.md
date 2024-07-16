@@ -50,7 +50,8 @@ C#, WPF, OpenCV, MSSQL
 <br />
 <summary>주차관리프로세스</summary>
 <div markdown="1" style="padding-left: 15px;">
-<img src="https://github.com/user-attachments/assets/97283fd5-7ef1-40d9-9d27-51292622d4de.png" width="800px"/>
+<!-- <img src="https://github.com/user-attachments/assets/97283fd5-7ef1-40d9-9d27-51292622d4de.png" width="800px"/> -->
+![process](https://github.com/user-attachments/assets/296d2b7f-3ce4-474d-a97a-13fcfd67b3e4)
 </div>
 <br />
 <br />
