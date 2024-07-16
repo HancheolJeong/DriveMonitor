@@ -53,7 +53,7 @@ namespace Service.ViewModels
 
             // 3단계 전처리된 영상에 Edge 검출
             Mat imgS3 = new Mat();
-            Cv2.Canny(imgS2, imgS3, 100, 200, 3);
+            Cv2.Canny(imgS2, imgS3, 100, 200);
             Cv2.ImShow("3단계 Edge", imgS3);
 
 
@@ -61,26 +61,48 @@ namespace Service.ViewModels
             Mat imgS4 = new Mat();
             Point[][] contours;
             HierarchyIndex[] hierarchy; // 외곽선 계층 정보
-            Cv2.FindContours(imgS3, out contours, out hierarchy, RetrievalModes.Tree, ContourApproximationModes.ApproxSimple);
+            Cv2.FindContours(imgS3, out contours, out hierarchy, RetrievalModes.List, ContourApproximationModes.ApproxSimple);
             List<Point[]> contours_poly = new List<Point[]>(contours.Length);
             imgS4 = Mat.Zeros(imgS3.Size(), MatType.CV_8UC3);
-            List<Rect> boundRect = new List<Rect>(contours.Length);
+            List<Rect> boundRect = new List<Rect>();
             List<Rect> boundRect2 = new List<Rect>();
+            List<Rect> boundRect3 = new List<Rect>();
 
-            for (int i = 0; i < contours.Length; i++)
+            for (int i = 0; i < contours.Length; i++) // Contours 정보 추가 하는 로직
             {
                 contours_poly.Add(Cv2.ApproxPolyDP(contours[i], 1, true));
-                boundRect.Add(Cv2.BoundingRect(contours_poly[i])); // Contour 정보 추가
+                //boundRect.Add(Cv2.BoundingRect(contours_poly[i])); // Contour 정보 추가
+                Rect newRect = Cv2.BoundingRect(contours_poly[i]); // 새로운 Contour 정보 생성
+
+                bool isOverlap = false;
+                for (int j = 0; j < boundRect.Count; j++)
+                {
+                    if (newRect.IntersectsWith(boundRect[j])) // 중복 검사
+                    {
+                        isOverlap = true;
+                        if ((newRect.Width * newRect.Height) > (boundRect[j].Width * boundRect[j].Height)) // 새로운 사각형이 더 큰 경우
+                        {
+                            boundRect[j] = newRect; // 기존 사각형을 새로운 사각형으로 교체
+                            break;
+                        }
+                    }
+                }
+                if (!isOverlap)
+                {
+                    boundRect.Add(newRect); // 중복이 없는 경우 바로 추가
+                }
             }
+
+
 
             int refinery_count = 0;
 
-            for (int i = 0; i < contours.Length; i++)
+            for (int i = 0; i < boundRect.Count; i++)
             {
                 double ratio = (double)boundRect[i].Height / boundRect[i].Width;
 
                     //if ((boundRect[i].Width * boundRect[i].Height <= 2000) && (boundRect[i].Width * boundRect[i].Height >= 200))
-                if ((ratio <= 3.0) && (ratio >= 0.8) && (boundRect[i].Width * boundRect[i].Height <= 1500) && (boundRect[i].Width * boundRect[i].Height >= 200))
+                if ((ratio <= 3.0) && (ratio >= 0.6) && (boundRect[i].Width * boundRect[i].Height <= 2000) && (boundRect[i].Width * boundRect[i].Height >= 200))
                 {
                     Cv2.DrawContours(imgS4, contours, i, new Scalar(0, 255, 255), 1, LineTypes.Link8, hierarchy, 0); // DrawContour는 외곽선 그리는 함수
                     Cv2.Rectangle(imgS4, boundRect[i].TopLeft, boundRect[i].BottomRight, new Scalar(255, 0, 0), 1, LineTypes.Link8); //외곽선을 채우는 사각형을 그리는 함수
@@ -93,6 +115,35 @@ namespace Service.ViewModels
             }
             Cv2.ImShow("4단계 Contour", imgS4);
 
+
+            // 5단계 이미지 Crop
+            // Median 계산
+            List<int> areas = boundRect.Select(rect => rect.Width * rect.Height).ToList();
+            areas.Sort();
+            int medianArea = areas[areas.Count / 2];
+            int lowerBound = (int)(medianArea * 0.70);
+            int upperBound = (int)(medianArea * 1.30);
+
+            // Median 주변값 필터링
+            List<Rect> filteredRects = boundRect.Where(rect => (rect.Width * rect.Height >= lowerBound && rect.Width * rect.Height <= upperBound)).ToList();
+
+            // 최대 TopLeft와 BottomRight 찾기
+            Point topLeft = new Point(filteredRects.Min(rect => rect.Left), filteredRects.Min(rect => rect.Top));
+            Point bottomRight = new Point(filteredRects.Max(rect => rect.Right), filteredRects.Max(rect => rect.Bottom));
+
+            Size rectSize = new Size(bottomRight.X - topLeft.X, bottomRight.Y - topLeft.Y);
+            // 영역 Crop 및 출력
+            Rect numberPlateRect = new Rect(topLeft, rectSize);
+            Mat numberPlateImg = new Mat(imgS1, numberPlateRect);
+            Cv2.ImShow("Detected Number Plate", numberPlateImg);
+
+            Cv2.GaussianBlur(numberPlateImg, numberPlateImg, new Size(5, 5), 0);
+            Cv2.AdaptiveThreshold(numberPlateImg, numberPlateImg, 255, AdaptiveThresholdTypes.GaussianC, ThresholdTypes.BinaryInv, 19, 9);
+
+            Cv2.ImWrite("temp.jpg", numberPlateImg);
+            Cv2.ImShow("result", numberPlateImg);
+
+
             //Cv2.ImWrite("temp.jpg", imgS7);
             //Cv2.ImShow("result", imgS7);
 
@@ -100,7 +151,7 @@ namespace Service.ViewModels
             Cv2.DestroyAllWindows();
 
 
-            //test = GetLicensePlateNumber("temp.jpg");
+            test = GetLicensePlateNumber("temp.jpg");
             return test;
 
 
