@@ -18,15 +18,17 @@ namespace Service.Views
         public MainViewModel _mainViewModel { get; set; }
         private TcpListener _listener; // TCP 소켓 선언 
         private const int Port = 11000; // 포트번호
-        public ObservableCollection<VehicleInfo> IncomingVehicles { get; set; } = new ObservableCollection<VehicleInfo>(); // 들어온 차량 정보 객체 선언
-        public ObservableCollection<VehicleInfo> OutgoingVehicles { get; set; } = new ObservableCollection<VehicleInfo>(); // 나간 차량 정보 객체 선언
+        //public ObservableCollection<VehicleInfo> IncomingVehicles { get; set; } = new ObservableCollection<VehicleInfo>(); // 들어온 차량 정보 객체 선언
+        //public ObservableCollection<VehicleInfo> OutgoingVehicles { get; set; } = new ObservableCollection<VehicleInfo>(); // 나간 차량 정보 객체 선언
 
         public MainWindow()
         {
             InitializeComponent(); // XAML 정의 요소 초기화
-            DataContext = this; // 데이터 바인딩을 위한 데이터 컨텍스트 설정
-            StartTcpServer(); // TCP 서버 시작
             _mainViewModel = new MainViewModel();
+            DataContext = _mainViewModel; // 데이터 바인딩을 위한 데이터 컨텍스트 설정
+            _mainViewModel.LoadVehicles();
+            //Loaded += async (_, __) => await _mainViewModel.LoadVehicles();
+            StartTcpServer(); // TCP 서버 시작
         }
 
         private async void StartTcpServer()
@@ -63,29 +65,6 @@ namespace Service.Views
         private async Task HandleIncomingVehicle(NetworkStream stream)
         {
             string imageResource = await ReceiveFile(stream); // 파일 수신
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                string number = _mainViewModel.LoadAndProcessImage(imageResource);
-                try
-                {
-                    var image = new BitmapImage(new Uri(imageResource, UriKind.Absolute)); // 비트맵 이미지 생성
-                    Application.Current.Dispatcher.Invoke(() => // UI 스레드가 아닌 다른 스레드에서 UI요소에 접근할 때 동기실행 되도록 하는구문
-                    {
-                        IncomingVehicleImage.Source = image; // WPF 이미지 컨트롤 소스 이미지 지정
-
-                        IncomingVehicles.Add(new VehicleInfo // 리스트뷰 요소 추가
-                        {
-                            VehicleNumber = number, // 차량 번호
-                            Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") // 들어온 시간
-                        });
-                    });
-
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"WPF 컨트롤 작업 중 오류가 발생했습니다.: {ex.Message}");
-                }
-            });
 
             byte[] response = Encoding.UTF8.GetBytes("0"); // 응답 객체 생성
             await stream.WriteAsync(response, 0, response.Length); // 응답 전송
@@ -94,29 +73,6 @@ namespace Service.Views
         private async Task HandleOutgoingVehicle(NetworkStream stream)
         {
             string imageResource = await ReceiveFile(stream); // 파일 수신
-            Application.Current.Dispatcher.Invoke(() =>
-            {
-                try
-                {
-                    var image = new BitmapImage(new Uri(imageResource, UriKind.Absolute)); // 비트맵 이미지 생성
-
-                    Application.Current.Dispatcher.Invoke(() => // UI 스레드가 아닌 다른 스레드에서 UI요소에 접근할 때 동기실행 되도록 하는구문
-                    {
-                        OutgoingVehicleImage.Source = image; // WPF 이미지 컨트롤 소스 이미지 지정
-
-                        OutgoingVehicles.Add(new VehicleInfo // 리스트뷰 요소 추가
-                        {
-                            VehicleNumber = "0001", // 차량 번호
-                            Fee = 1000, // 요금
-                            Time = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") // 나간 시간
-                        });
-                    });
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show($"WPF 컨트롤 작업 중 오류가 발생했습니다.: {ex.Message}");
-                }
-            });
 
             int fee = 1000;
             // 데이터베이스로부터 들어온 시간과 나간시간의 차를 구하고 이를 주차요금으로 환산한다.

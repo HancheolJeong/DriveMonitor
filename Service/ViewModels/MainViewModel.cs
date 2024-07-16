@@ -8,6 +8,14 @@ using Rect = OpenCvSharp.Rect;
 using System.IO;
 using System.Windows.Media;
 using System.Windows;
+using Service.Models;
+using System.Data.SqlClient;
+using System.Data;
+using System.Runtime.CompilerServices;
+using System.Windows.Media.Imaging;
+using System.Drawing;
+using System.Windows.Input;
+using Microsoft.Win32;
 /*
  * 차량 번호판 인식 프로세스
  * 1. 영상은 GrayScale 영상으로 변환
@@ -22,9 +30,55 @@ namespace Service.ViewModels
     public class MainViewModel : INotifyPropertyChanged
     {
         //private Mat _image;
+        private List<Car> _incomingVehicles = new List<Car>();
+        private List<Car> _outgoingVehicles = new List<Car>();
+        private BitmapImage _incomingVehicleImage;
+        private BitmapImage _outgoingVehicleImage;
+
+        public List<Car> IncomingVehicles
+        {
+            get { return _incomingVehicles; }
+            set
+            {
+                _incomingVehicles = value;
+                OnPropertyChanged(nameof(IncomingVehicles));
+            }
+        }
+
+        public List<Car> OutgoingVehicles
+        {
+            get { return _outgoingVehicles; }
+            set
+            {
+                _outgoingVehicles = value;
+                OnPropertyChanged(nameof(OutgoingVehicles));
+            }
+        }
+
+        public BitmapImage IncomingVehicleImage
+        {
+            get { return _incomingVehicleImage; }
+            set
+            {
+                _incomingVehicleImage = value;
+                OnPropertyChanged(nameof(IncomingVehicleImage));
+            }
+        }
+
+        public BitmapImage OutgoingVehicleImage
+        {
+            get { return _outgoingVehicleImage; }
+            set
+            {
+                _outgoingVehicleImage = value;
+                OnPropertyChanged(nameof(OutgoingVehicleImage));
+            }
+        }
+
+        public ICommand LoadImageCommand { get; private set; }
+
         public MainViewModel()
         {
-
         }
         protected virtual void OnPropertyChanged(string propertyName)
         {
@@ -152,6 +206,7 @@ namespace Service.ViewModels
 
 
             test = GetLicensePlateNumber("temp.jpg");
+
             return test;
 
 
@@ -183,5 +238,114 @@ namespace Service.ViewModels
             var match = regex.Match(text);
             return match.Success ? match.Value : "OCR 인식 오류 : " + text;
         }
+        public async Task LoadVehicles()
+        {
+            await LoadIncomingVehicles();
+            await LoadOutgoingVehicles();
+        }
+        private async Task LoadIncomingVehicles()
+        {
+            List<Car> tempIncomingVehicles = new List<Car>();
+            DataSet ds = new DataSet();
+            string path = "../../../Resources/default.jpg";
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(Properties.Settings.Default.ConnectionStr))
+                {
+                    await sqlConnection.OpenAsync();
+                    SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT plate_number, input_date, input_path FROM car ORDER BY input_date ASC", sqlConnection);
+                    sqlDataAdapter.Fill(ds);
+                }
+
+                if (ds.Tables.Count > 0)
+                {
+                    DataTable dt = ds.Tables[0];
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        Car car = new Car
+                        {
+                            plate_number = row["plate_number"].ToString(), // 차량번호 저장
+                            input_date = Convert.ToDateTime(row["input_date"]), // 들어온 시간 저장
+                            input_path = row["input_path"].ToString() // 들어온 차량 번호 이미지 경로 저장
+                        };
+                        tempIncomingVehicles.Add(car);
+                    }
+                }
+                IncomingVehicles = tempIncomingVehicles;
+                if (tempIncomingVehicles.Count > 0)
+                {
+                    path = tempIncomingVehicles.Last().input_path;
+                }
+                await IncomingDisplayImage(path);
+
+            }
+            catch (Exception ex)
+            {
+                // 예외 처리 로직
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        private async Task LoadOutgoingVehicles()
+        {
+            List<Car> tempOutgoingVehicles = new List<Car>();
+            DataSet ds = new DataSet();
+            string path = "../../../Resources/default.jpg";
+            try
+            {
+                using (SqlConnection sqlConnection = new SqlConnection(Properties.Settings.Default.ConnectionStr))
+                {
+                    await sqlConnection.OpenAsync();
+                    SqlDataAdapter sqlDataAdapter = new SqlDataAdapter("SELECT plate_number, cost, output_date, output_path FROM car WHERE output_date IS NOT NULL ORDER BY output_date ASC", sqlConnection);
+                    sqlDataAdapter.Fill(ds);
+                }
+
+                if (ds.Tables.Count > 0)
+                {
+                    DataTable dt = ds.Tables[0];
+                    foreach (DataRow row in dt.Rows)
+                    {
+                        Car car = new Car
+                        {
+                            plate_number = row["plate_number"].ToString(),
+                            cost = Convert.ToInt32(row["cost"]),
+                            output_date = Convert.ToDateTime(row["output_date"]),
+                            output_path = row["output_path"].ToString()
+                        };
+                        tempOutgoingVehicles.Add(car);
+                    }
+                }
+                OutgoingVehicles = tempOutgoingVehicles;
+                if (tempOutgoingVehicles.Count > 0)
+                {
+                    path = tempOutgoingVehicles.Last().input_path;
+                }
+                await OutgoingDisplayImage(path);
+            }
+            catch (Exception ex)
+            {
+                // 예외 처리 로직
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        private async Task IncomingDisplayImage(string path)
+        {
+            string fullPath = Path.GetFullPath(path);
+            //MessageBox.Show(path);
+            var image = new BitmapImage(new Uri(fullPath));
+            IncomingVehicleImage = image;
+        }
+
+        private async Task OutgoingDisplayImage(string path)
+        {
+            string fullPath = Path.GetFullPath(path);
+            var image = new BitmapImage(new Uri(fullPath));
+            OutgoingVehicleImage = image;
+        }
+
+
+
+
     }
 }
