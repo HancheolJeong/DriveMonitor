@@ -73,7 +73,28 @@
                 </ListView.View>
             </ListView>
         </Grid>
+        <Grid Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="4*" />
+                <RowDefinition Height="3*" />
+                <RowDefinition Height="3*" />
+            </Grid.RowDefinitions>
 
-        <TextBlock Grid.Column="2" Background="LightYellow" Text="" />
+            <StackPanel Grid.Row="0" Background="LightYellow">
+                <TextBlock Text="금일 현황" FontSize="20" FontWeight="Bold" Padding="10" HorizontalAlignment="Center"/>
+                <TextBlock Text="{Binding IncomingVehicleToday}" FontSize="16" Padding="10"/>
+                <TextBlock Text="{Binding OutgoingVehicleToday}" FontSize="16" Padding="10"/>
+                <TextBlock Text="{Binding CostToday}" FontSize="16" Padding="10"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="1" Background="LightYellow">
+                <TextBlock Text="요금 정책" FontSize="20" FontWeight="Bold" Padding="10" HorizontalAlignment="Center"/>
+                <TextBlock Text="최초 30분: 3,000원" FontSize="16" Padding="10"/>
+                <TextBlock Text="30분 초과 시 10분 마다: 1,000원" FontSize="10" Padding="10"/>
+            </StackPanel>
+            
+            <Button Grid.Row="2"  Content="차량정보확인" FontSize="20" FontWeight="Bold" Margin="10" HorizontalAlignment="Stretch"/>
+        </Grid>
+
     </Grid>
 </Window>

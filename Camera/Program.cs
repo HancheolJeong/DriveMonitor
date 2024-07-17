@@ -81,7 +81,7 @@ namespace TcpClientApp
             await stream.WriteAsync(feeBytes, 0, feeBytes.Length); // 응답읽기
 
             // 차량 번호 수신
-            buffer = new byte[4]; // 4바이트크기
+            buffer = new byte[1024];
             bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
             string vehicleNumber = Encoding.UTF8.GetString(buffer, 0, bytesRead);
 

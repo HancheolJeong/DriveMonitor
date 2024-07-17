@@ -17,9 +17,8 @@ namespace Service.Views
     {
         public MainViewModel _mainViewModel { get; set; }
         private TcpListener _listener; // TCP 소켓 선언 
+        private Task<string> plateNumber;
         private const int Port = 11000; // 포트번호
-        //public ObservableCollection<VehicleInfo> IncomingVehicles { get; set; } = new ObservableCollection<VehicleInfo>(); // 들어온 차량 정보 객체 선언
-        //public ObservableCollection<VehicleInfo> OutgoingVehicles { get; set; } = new ObservableCollection<VehicleInfo>(); // 나간 차량 정보 객체 선언
 
         public MainWindow()
         {
@@ -27,7 +26,6 @@ namespace Service.Views
             _mainViewModel = new MainViewModel();
             DataContext = _mainViewModel; // 데이터 바인딩을 위한 데이터 컨텍스트 설정
             _mainViewModel.LoadVehicles();
-            //Loaded += async (_, __) => await _mainViewModel.LoadVehicles();
             StartTcpServer(); // TCP 서버 시작
         }
 
@@ -64,44 +62,85 @@ namespace Service.Views
 
         private async Task HandleIncomingVehicle(NetworkStream stream)
         {
-            string imageResource = await ReceiveFile(stream); // 파일 수신
-
-            byte[] response = Encoding.UTF8.GetBytes("0"); // 응답 객체 생성
-            await stream.WriteAsync(response, 0, response.Length); // 응답 전송
+            try
+            {
+                string imagePath = await ReceiveFile(stream); // 파일 수신
+                string plateNumber = await _mainViewModel.ProcessImage(imagePath);
+                await _mainViewModel.IncomingInsertData(plateNumber, DateTime.Now, imagePath);
+                byte[] response = Encoding.UTF8.GetBytes("0"); // 응답 객체 생성
+                await stream.WriteAsync(response, 0, response.Length); // 응답 전송
+            }
+            catch (Exception ex) 
+            {
+                MessageBox.Show($"오류가 발생했습니다. {ex.Message}");
+                byte[] response = Encoding.UTF8.GetBytes("-1"); // 응답 객체 생성
+                await stream.WriteAsync(response, 0, response.Length); // 응답 전송
+            }
         }
 
         private async Task HandleOutgoingVehicle(NetworkStream stream)
         {
-            string imageResource = await ReceiveFile(stream); // 파일 수신
-
-            int fee = 1000;
             // 데이터베이스로부터 들어온 시간과 나간시간의 차를 구하고 이를 주차요금으로 환산한다.
+            int cost = 3000;
+            DateTime current_time = DateTime.Now;
 
-            byte[] feeBytes = BitConverter.GetBytes(fee); // 요금값을 바이트로 변환해 배열에 넣는다
-            await stream.WriteAsync(feeBytes, 0, feeBytes.Length); // 요금정보를 전송
+            string imagePath = await ReceiveFile(stream); // 파일 수신
+            string plateNumber = await _mainViewModel.ProcessImage(imagePath); // OCR 수행
+
+            DateTime incoming_time; // 차량이 들어왔던 시간
+            TimeSpan timeDifference; // 시간차를 저장하는 객체
+
+            try
+            {
+                incoming_time = await _mainViewModel.GetIncomingDate(plateNumber);
+                timeDifference = current_time - incoming_time;
+
+                // 30분 이하인 경우, 기본 요금은 3000원
+                if (timeDifference.TotalMinutes <= 30)
+                {
+                    cost = 3000;
+                }
+                else
+                {
+                    // 30분을 초과하는 경우, 기본 요금에 10분마다 1000원 추가
+                    double extraMinutes = timeDifference.TotalMinutes - 30;
+                    int extraCharges = (int)Math.Ceiling(extraMinutes / 10) * 1000; // 여기를 수정
+                    cost += extraCharges;
+                }
+
+                byte[] costBytes = BitConverter.GetBytes(cost); // 요금값을 바이트로 변환해 배열에 넣는다
+                await stream.WriteAsync(costBytes, 0, costBytes.Length); // 요금정보를 전송
+            }
+            catch(Exception ex)
+            {
+                byte[] costBytes = BitConverter.GetBytes(-1); // 요금값을 바이트로 변환해 배열에 넣는다
+                await stream.WriteAsync(costBytes, 0, costBytes.Length); // 요금정보를 전송
+                Console.WriteLine($"오류가 발생했습니다. {ex.Message}");
+            }
+
 
             byte[] buffer = new byte[sizeof(int)]; // 4바이트 버퍼 생성
             int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length); // 스트림에서 데이터를 읽는다
-            string clientFee = Encoding.UTF8.GetString(buffer, 0, bytesRead); // 읽은 데이터를 문자열로 변환
+            int clientCost = BitConverter.ToInt32(buffer, 0); // 읽은 데이터를 문자열로 변환
 
-            // 데이터베이스에 데이터를 저장하는 작업이 필요하다.
-            Console.WriteLine(clientFee);
-            Console.WriteLine(fee.ToString());
-            if (clientFee == fee.ToString())
+            if (clientCost == cost)
             {
-                byte[] vehicleNumberBytes = Encoding.UTF8.GetBytes("0001"); // 차량 번호
+                byte[] vehicleNumberBytes = Encoding.UTF8.GetBytes(plateNumber); // 차량 번호
                 await stream.WriteAsync(vehicleNumberBytes, 0, vehicleNumberBytes.Length); // 차량 번호 전송
+                await _mainViewModel.OutgoingUpdateData(plateNumber, current_time, imagePath, cost); // 데이터베이스 나간시간, 이미지 경로, 요금 업데이트
             }
             else
             {
-                byte[] errorBytes = BitConverter.GetBytes(-1);
+                byte[] errorBytes = Encoding.UTF8.GetBytes("-1");
                 await stream.WriteAsync(errorBytes, 0, errorBytes.Length); // 오류 발생 시 -1 전송
             }
 
-            //byte[] response = Encoding.UTF8.GetBytes(clientResponse == "0" ? "0" : "1"); // 임시
-            //await stream.WriteAsync(response, 0, response.Length); //임시
+
         }
 
+        /**
+         * 비동기 + 들어오는 차량 나가는 차량 몰리면 이름이 겹칠 가능성 있을듯...? 아마도...?
+         */
         private async Task<string> ReceiveFile(NetworkStream stream)
         {
             byte[] lengthBuffer = new byte[4]; // 파일 길이를 저장할 버퍼
